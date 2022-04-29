@@ -67,7 +67,7 @@ run_facets = function(read_counts,
     
     # Generate output
     list(
-        snps = out$jointseg,
+        snps = out$jointseg
     )
 }
 
