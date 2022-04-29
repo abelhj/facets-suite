@@ -64,13 +64,14 @@ run_facets = function(read_counts,
     dat = facets::preProcSample(read_counts, ndepth = ndepth, het.thresh = 0.25, snp.nbhd = snp_nbhd, cval = 25,
                                 gbuild = genome, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
     #out = facets::procSample(dat, cval = cval, min.nhet = min_nhet, dipLogR = dipLogR)
-    
+    print("test")
+    return(dat)
     # Generate output
-    list(
-        dd = dat$out,
-	tt = dat$tmp
-        #snps = out$jointseg
-    )
+#    list(
+#        dd = dat$out,
+#	tt = dat$tmp
+#        #snps = out$jointseg
+#    )
 }
 
 ## load facets output from .Rds file or legacy run of .Rdata file
