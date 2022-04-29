@@ -64,7 +64,7 @@ run_facets = function(read_counts,
     dat = facets::preProcSample(read_counts, ndepth = ndepth, het.thresh = 0.25, snp.nbhd = snp_nbhd, cval = 25,
                                 gbuild = genome, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
     # Generate output
-#    list(
+    list(
         snps=dat$jointseg
     )
 }
