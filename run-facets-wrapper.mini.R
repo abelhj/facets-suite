@@ -159,7 +159,7 @@ print_igv = function(outfile,
 facets_iteration = function(name_prefix, ...) {
     params = list(...)
     
-    output = run_facets_mini(read_counts = read_counts,
+    output = run_facets(read_counts = read_counts,
                         cval = params$cval,
                         dipLogR = params$dipLogR,
                         ndepth = params$ndepth,
