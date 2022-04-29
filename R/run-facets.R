@@ -64,24 +64,10 @@ run_facets = function(read_counts,
     dat = facets::preProcSample(read_counts, ndepth = ndepth, het.thresh = 0.25, snp.nbhd = snp_nbhd, cval = 25,
                                 gbuild = genome, hetscale = TRUE, unmatched = FALSE, ndepthmax = 1000)
     out = facets::procSample(dat, cval = cval, min.nhet = min_nhet, dipLogR = dipLogR)
-    fit = facets::emcncf(out)
-    
-    # Fix bad NAs
-    fit$cncf = cbind(fit$cncf, cf = out$out$cf, tcn = out$out$tcn, lcn = out$out$lcn)
-    fit$cncf$lcn[fit$cncf$tcn == 1] = 0
-    fit$cncf$lcn.em[fit$cncf$tcn.em == 1] = 0
     
     # Generate output
     list(
         snps = out$jointseg,
-        segs = fit$cncf,
-        purity = as.numeric(fit$purity),
-        ploidy = as.numeric(fit$ploidy),
-        dipLogR = out$dipLogR,
-        alBalLogR = out$alBalLogR,
-        flags = out$flags,
-        em_flags = fit$emflags,
-        loglik = fit$loglik
     )
 }
 
