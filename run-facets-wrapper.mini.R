@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
 
 args = commandArgs(TRUE)
 if (length(args) == 0) {
-    message('Run run-facets-wrapper.R --help for list of input arguments.')
+    message('Run run-facets-wrapper.mini.R --help for list of input arguments.')
     quit()
 }
 
@@ -159,7 +159,7 @@ print_igv = function(outfile,
 facets_iteration = function(name_prefix, ...) {
     params = list(...)
     
-    output = run_facets(read_counts = read_counts,
+    output = run_facets_mini(read_counts = read_counts,
                         cval = params$cval,
                         dipLogR = params$dipLogR,
                         ndepth = params$ndepth,
@@ -169,16 +169,6 @@ facets_iteration = function(name_prefix, ...) {
                         seed = params$seed,
                         facets_lib_path = params$facets_lib_path)
     
-    # No need to print the segmentation
-    # print_segments(outfile = paste0(name_prefix, '.cncf.txt'), 
-    #                facets_output = output)
-    
-    print_igv(outfile = paste0(name_prefix, '.seg'),
-              facets_output = output)
-    
-    print_plots(outfile = paste0(name_prefix, '.png'),
-                facets_output = output,
-                cval = params$cval)
     
     output
 }
@@ -203,75 +193,7 @@ read_counts = read_snp_matrix(args$counts_file)
 message(paste('Writing to', directory))
 
 # Determine if running two-pass
-if (!is.null(args$purity_cval)) {
-    name = paste0(directory, '/', sample_id)
-    purity_output = facets_iteration(name_prefix = paste0(name, '_purity'),
-                                     dipLogR = args$dipLogR,
-                                     cval = args$purity_cval,
-                                     ndepth = args$normal_depth,
-                                     snp_nbhd = args$snp_window_size,
-                                     min_nhet = args$purity_min_nhet,
-                                     genome = args$genome,
-                                     seed = args$seed,
-                                     facets_lib_path = args$facets_lib_path)
-
-    hisens_output = facets_iteration(name_prefix = paste0(name, '_hisens'),
-                                     dipLogR = purity_output$dipLogR,
-                                     cval = args$cval,
-                                     ndepth = args$normal_depth,
-                                     snp_nbhd = args$snp_window_size,
-                                     min_nhet = args$min_nhet,
-                                     genome = args$genome,
-                                     seed = args$seed,
-                                     facets_lib_path = args$facets_lib_path)
-    
-    metadata = NULL
-    if (args$everything) {
-        metadata = c(
-            map_dfr(list(purity_output, hisens_output), function(x) { arm_level_changes(x$segs, x$ploidy, args$genome)[-5] }),
-            map_dfr(list(purity_output, hisens_output), function(x) calculate_lst(x$segs, x$ploidy, args$genome)),
-            map_dfr(list(purity_output, hisens_output), function(x) calculate_ntai(x$segs, x$ploidy, args$genome)),
-            map_dfr(list(purity_output, hisens_output), function(x) calculate_hrdloh(x$segs, x$ploidy)),
-            map_dfr(list(purity_output, hisens_output), function(x) calculate_loh(x$segs, x$snps, args$genome))
-        )
-        
-        qc = map_dfr(list(purity_output, hisens_output), function(x) check_fit(x, genome = args$genome)) %>% 
-            add_column(sample = sample_id,
-                       cval = c(args$purity_cval, args$cval), .before = 1)
-        # Write QC
-        write(qc, paste0(name, '.qc.txt'))
-        
-        # Write gene level // use hisensitivity run
-        gene_level = gene_level_changes(hisens_output, args$genome) %>% 
-            add_column(sample = sample_id, .before = 1)
-        write(gene_level, paste0(name, '.gene_level.txt'))
-        
-        # Write arm level // use purity run
-        arm_level = arm_level_changes(purity_output$segs, purity_output$ploidy, args$genome) %>% 
-            pluck('full_output') %>% 
-            add_column(sample = sample_id, .before = 1)
-        write(arm_level, paste0(name, '.arm_level.txt'))
-    }
-    
-    run_details = print_run_details(outfile = ifelse(args$legacy_output, '/dev/null', paste0(name, '.txt')),
-                                    run_type = c('purity', 'hisens'),
-                                    cval = c(args$purity_cval, args$cval),
-                                    min_nhet = c(args$purity_min_nhet, args$min_nhet),
-                                    purity = c(purity_output$purity, hisens_output$purity),
-                                    ploidy = c(purity_output$ploidy, hisens_output$ploidy),
-                                    dipLogR = c(purity_output$dipLogR, hisens_output$dipLogR),
-                                    flags = unlist(map(list(purity_output$flags, hisens_output$flags), 
-                                                       function(x) paste0(x, collapse = '; '))),
-                                    metadata)
-    
-    if (args$legacy_output) {
-        create_legacy_output(hisens_output, directory, sample_id, args$counts_file, 'hisens', run_details)
-        create_legacy_output(purity_output, directory, sample_id, args$counts_file, 'purity', run_details)
-    } else {
-        # Write RDS
-        saveRDS(purity_output, paste0(name, '_purity.rds'))
-        saveRDS(hisens_output, paste0(name, '_hisens.rds'))
-    }
+if (FALSE) {
     
 } else {
     name = paste0(directory, '/', sample_id)
@@ -285,48 +207,5 @@ if (!is.null(args$purity_cval)) {
                               genome = args$genome,
                               seed = args$seed,
                               facets_lib_path = args$facets_lib_path)
-    
-    metadata = NULL
-    if (args$everything) {
-        metadata = c(
-            arm_level_changes(output$segs, output$ploidy, args$genome),
-            calculate_lst(output$segs, output$ploidy, args$genome),
-            calculate_ntai(output$segs, output$ploidy, args$genome),
-            calculate_hrdloh(output$segs, output$ploidy),
-            calculate_loh(output$segs, output$snps, args$genome)
-        )
-        
-        # Write QC
-        qc = check_fit(output, genome = args$genome)
-        qc = c(sample = sample_id, cval = args$cval, qc)
-        write(qc, paste0(name, '.qc.txt'))
-        
-        # Write gene level
-        gene_level = gene_level_changes(output, args$genome) %>% 
-            add_column(sample = sample_id, .before = 1)
-        write(gene_level, paste0(name, '.gene_level.txt'))
-        
-        # Write arm level
-        arm_level = add_column(metadata$full_output, sample = sample_id, .before = 1)
-        write(arm_level, paste0(name, '.arm_level.txt'))
-    }
-    
-    # Write run details/metadata
-    run_details =
-        print_run_details(outfile = ifelse(args$legacy_output, '/dev/null', paste0(name, '.txt')),
-                          run_type = '',
-                          cval = args$cval,
-                          min_nhet = args$min_nhet,
-                          purity = output$purity,
-                          ploidy = output$ploidy,
-                          dipLogR = output$ploidy,
-                          flags = paste0(output$flags, collapse = '; '),
-                          metadata)
-    
-    # Write RDS
-    if (args$legacy_output) {
-        create_legacy_output(output, directory, sample_id, args$counts_file, '', run_details)
-    } else {
-        saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
-    }
+    saveRDS(output, paste0(directory, '/', sample_id, '.rds'))
 }
